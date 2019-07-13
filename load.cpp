@@ -3,15 +3,6 @@
 #include "load.h"
 #include "errmsg.h"
 
-class Sentence{
-public:
-	String command;
-	std::vector<String> arguments;
-	void run();
-};
-
-std::map<const String, const String> macros;
-
 String::Pos String::pos() const {
 	return Pos(text.front().pos, text.back().pos);
 }
@@ -35,58 +26,15 @@ void String::append(const String &str, const String &from){
 		text.back().pos.add_from(from.text.front().pos, from.text.back().pos);
 	}
 }
-bool Source::eof(){
-	return fs.eof();
-}
-Source::Source(const char filename_cstr[]):
-	fs(filename_cstr),
-	filename(filename_cstr),
-	line(0),
-	pos(0),
-	buf_comment(filename),
-	buf_peek(filename)
-{
-}
 
-void Source::next(Char &ch){
-	ch.set(fs.get(), line, pos);
-	if(ch == '\n'){
-		++line;
-		pos = 0;
-	}else{
-		++pos;
-	}
-}
+class Sentence{
+public:
+	String command;
+	std::vector<String> arguments;
+	void run();
+};
 
-Char Source::get(bool peek){
-	if(!buf_peek.isbuf){
-		if(buf_comment.isbuf){
-			buf_peek.buf = buf_comment.buf;
-			buf_comment.isbuf = false;
-		}else{
-			next(buf_peek.buf);
-		}
-		if(buf_peek.buf == '/'){
-			next(buf_comment.buf);
-			if(buf_comment.buf == '+'){
-				bool plus = false;
-				for(;;){
-					Char tmp = get();
-					if(eof()) error_unterminated_comment(tmp);
-					else if(tmp == '+') plus = true;
-					else if(plus && tmp == '/') break;
-					else plus = false;
-				}
-				return get(peek);
-			}else{
-				buf_comment.isbuf = true;
-			}
-		}
-	}
-	buf_peek.isbuf = peek;
-	return buf_peek.buf;
-}
-
+std::map<const String, const String> macros;
 
 void load(Source &source){
 	Sentence sentence;
